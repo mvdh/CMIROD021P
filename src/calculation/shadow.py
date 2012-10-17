@@ -88,7 +88,7 @@ class ShadowCalculator():
 		return self._az
 
 	@az.setter
-	def loc(self, value):
+	def az(self, value):
 		self._az = value
 
 	@property
@@ -112,7 +112,7 @@ class Place():
 
 	def __init__(self, p, h):
 		self._p = p
-		self.h = h
+		self._h = h
 
 	@property
 	def p(self):
