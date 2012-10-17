@@ -37,8 +37,8 @@ class SunPositionStorage():
 
 		f = open(pos_file)
 		f.readline() # skip first line
-		for a in range(20):	
-			row = f.readline().split(',')
+		for line in f:	
+			row = line.split(',')
 			year = int(row[1])
 			month = int(row[2])
 			day = int(row[3])
