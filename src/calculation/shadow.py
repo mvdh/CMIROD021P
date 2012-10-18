@@ -1,5 +1,6 @@
 import math
 from pymongo import Connection
+import datetime
 
 class ShadowCalculator():
 
@@ -28,14 +29,16 @@ class ShadowCalculator():
 
 
 		for doc in points:
+			print doc['loc']['x'],
+			print doc['loc']['y']
 			pl = Place(Point(doc['loc']['x'], doc['loc']['y']), doc['h'])
 			# Don't use the point which is the same as the location
 			if self.loc.p.x == pl.p.x and self.loc.p.y == pl.p.y:
 				continue
 			if self.preventsSunlight(pl):
-				return False
+				return True
 			
-		return True
+		return False
 
 	def preventsSunlight(self, pl):
 		dH = float(pl.h - self.loc.h)	# Delta h
@@ -154,8 +157,29 @@ class Point():
 		self._y = value
 
 
+
+# Small Test for local testing
 sC = ShadowCalculator()
-sC.az = 180
-sC.el = 45
-sC.loc = Place(Point(4, 10), 3)
-print sC.hasShadow()	
+
+dbsunpost = Connection()['sun_positions']
+c = 0
+sC.loc = Place(Point(10, 10), 3)
+for doc in dbsunpost.positions.find(
+	{ '$and': [
+		{ 'datetime' : { '$gt': datetime.datetime(2012, 6, 21) } }, 
+		{ 'datetime' : { '$lt': datetime.datetime(2012, 6, 24) } }
+	]}):
+	c = c + 1
+
+	sC.az = doc['az']
+	sC.el = doc['el']
+
+	print 'datetime: ' + str(doc['datetime'])
+	print 'el : ' + str(sC.el)
+	print 'az : ' + str(sC.az)
+	
+	if sC.hasShadow():
+		print 'shadow : yes'
+	else:
+		print 'shadow : no'
+	print
