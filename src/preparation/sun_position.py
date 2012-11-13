@@ -5,13 +5,25 @@ import math
 class SunPosition():
 
     def store_sun_positions(self, startdate, enddate):
+        db      = 'rdam'
+        coll    = 'sunpos'
+
+        # Make connection with the database
+        db = Connection()[db]
+        db[coll].create_index('datetime')
+        
+        # Use bulk insert to insert a lot of heights at once.
+        bulk = []
+
         step = datetime.timedelta(minutes=15)
         while startdate < enddate:
             sp = self.sun_position(startdate)
-
-            ###### STORE ######
-
+            if sp['el'] >= 5:
+                bulk.append({'datetime': startdate, 'el': sp['el'], 'az': sp['az']})
+            
             startdate += step
+        db[coll].insert(bulk)
+
 
     def sun_position(self, dtime=datetime.datetime.utcnow(), lat=51.923, lon=4.482):
         year    = dtime.year
