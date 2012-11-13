@@ -1,7 +1,8 @@
 from pymongo import Connection, GEO2D
 import math
 
-class RDHeightStorage():
+class RDHeight():
+    """ Class to deal with heights in Rijksdriehoekscoordinaten"""
 
     def __init__(self, zfile):
         self.zfile = zfile # File with x, y and z values
