@@ -1,4 +1,4 @@
-from dao import ColHeight
+from dao import DaoHeight
 from model import Point
 from pymongo import Connection, GEO2D
 import math
@@ -10,7 +10,7 @@ class RDHeight():
         self.zfile = zfile # File with x, y and z values
 
     def store_heights(self, box):
-        db = ColHeight(scale=3)
+        db = DaoHeight(scale=3)
         db.create_geo_index() 
 
         # Open file

@@ -1,12 +1,12 @@
 from pymongo import Connection, GEO2D
-from dao import ColSunPos
+from dao import DaoSunPosition
 import datetime
 import math
 
 class SunPosition():
 
     def store_sun_positions(self, start_date, end_date):
-        db = ColSunPos()
+        db = DaoSunPosition()
         db.create_datetime_index()
 
         step = datetime.timedelta(minutes=15)

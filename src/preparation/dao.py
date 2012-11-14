@@ -2,7 +2,7 @@ from model import Point
 from pymongo import Connection, GEO2D
 import math
 
-class ColHeight():
+class DaoHeight():
 
     def __init__(self, scale=1):
         self.col = Connection()['rdam']['height']
@@ -29,20 +29,43 @@ class ColHeight():
             self.bulk = []
 
     def find_within_box(self, points):
-        box = self.points_to_bson(points)
+        box = self.points_to_box(points)
         result = []
         for bson in self.col.find({'loc': {'$within': {'$box': box}}}):
             point = self.bson_to_point(bson)
             result.append(point)
         return result
 
-    def find_whitin_polygon(self, points):
-        polygon = self.points_to_bson(points)
+    def find_within_polygon(self, points):
+        polygon = self.points_to_polygon_bson(points)
         result = []
         for bson in self.col.find({'loc': {'$within': {'$polygon': polygon}}}):
             point = self.bson_to_point(bson)
             result.append(point)
         return result
+
+    def points_to_box(self, points):
+        p1x = points[0].x / math.pow(10, self.scale)
+        p1y = points[0].y / math.pow(10, self.scale)
+        p2x = points[1].x / math.pow(10, self.scale)
+        p2y = points[1].y / math.pow(10, self.scale)
+        box = {
+            'a': {'x':p1x, 'y':p1y},
+            'b': {'x':p2x, 'y':p2y}
+        }
+        return box
+
+    def points_to_polygon_bson(self, points):
+        result = []
+        for point in points:
+            bson = self.point_to_polygon_bson(point)
+            result.append(bson)
+        return result
+
+    def point_to_polygon_bson(self, point):
+        x = point.x / math.pow(10, self.scale)
+        y = point.y / math.pow(10, self.scale)
+        return {'x': x, 'y': y}
 
     def points_to_bson(self, points):
         result = []
@@ -64,7 +87,7 @@ class ColHeight():
         return Point(x, y, z)
 
 
-class ColSunPos():
+class DaoSunPosition():
 
     def __init__(self):
         self.col = Connection()['rdam']['sunpos']
@@ -79,3 +102,11 @@ class ColSunPos():
     def flush(self):
         self.col.insert(self.bulk)
         self.bulk = []
+
+    def find_within_time(self, start_date, end_date):
+        return self.col.find(
+            { '$and': [
+                { 'datetime' : { '$gt': start_date }}, 
+                { 'datetime' : { '$lt': end_date }}
+            ]}
+        )
