@@ -1,28 +1,23 @@
 from pymongo import Connection, GEO2D
+from dao import ColSunPos
 import datetime
 import math
 
 class SunPosition():
 
-    def store_sun_positions(self, startdate, enddate):
-        db      = 'rdam'
-        coll    = 'sunpos'
-
-        # Make connection with the database
-        db = Connection()[db]
-        db[coll].create_index('datetime')
-        
-        # Use bulk insert to insert a lot of heights at once.
-        bulk = []
+    def store_sun_positions(self, start_date, end_date):
+        db = ColSunPos()
+        db.create_datetime_index()
 
         step = datetime.timedelta(minutes=15)
-        while startdate < enddate:
-            sp = self.sun_position(startdate)
+        while start_date < end_date:
+            sp = self.sun_position(start_date)
             if sp['el'] >= 5:
-                bulk.append({'datetime': startdate, 'el': sp['el'], 'az': sp['az']})
+                db.persist({'datetime': start_date, 'el': sp['el'], 'az': sp['az']})
             
-            startdate += step
-        db[coll].insert(bulk)
+            start_date += step
+        
+        db.flush()
 
 
     def sun_position(self, dtime=datetime.datetime.utcnow(), lat=51.923, lon=4.482):
