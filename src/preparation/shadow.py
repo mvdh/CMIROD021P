@@ -1,11 +1,12 @@
-from model import Point
-from dao import DaoHeight, DaoSunPosition
+from dao import DaoHeight, DaoSunPosition, DaoShadow
+from model import Point, Shadow
 from pymongo import Connection
+from util import rd2wgs
 import math
 import datetime
 
 
-class Shadow():
+class ShadowHandler():
 
 	def __init__(self):
 		self._az 		= None		# Azimuth
@@ -13,31 +14,29 @@ class Shadow():
 		self._p 		= None		# Location to calculate shadow for
 		self.dao_height	= DaoHeight(scale=3)
 		self.dao_sunpos	= DaoSunPosition()
+		self.dao_shadow	= DaoShadow()
 
 	def store_shadows(self, start_date, end_date, box):
+		self.dao_shadow.create_index()
 		sun_positions = self.dao_sunpos.find_within_time(start_date, end_date)
+		points = self.dao_height.find_within_box(box)
 
 
-		c = 0
-		for point in self.dao_height.find_within_box(box):
+		for i, point in enumerate(points):
 			self.p = point
 			
-			for sunpos in sun_positions:
-				self.az = sunpos['az']
-				self.el = sunpos['el']
+			for sun_pos in sun_positions:
+				self.az = sun_pos.az
+				self.el = sun_pos.el
 			
-				print 'datetime: ' + str(sunpos['datetime'])
-				if self.has_shadow():
-					print 'shadow : yes'
-				else:
-					print 'shadow : no'
+				if self.has_shadow():		
+					latlon = rd2wgs.rd2wgs(point.x, point.y)
 
-				c += 1
-				if c > 100:
-					break
-			if c > 100:
-				break
+					shadow = Shadow(sun_pos.date_time, latlon[0], latlon[1])
+					self.dao_shadow.persist(shadow)
 
+			print 'remaining points: ',
+			print len(points) - i
 
 	def has_shadow(self):
 		# Maximum distance a place can give shadow
@@ -46,11 +45,9 @@ class Shadow():
 		# Furthest point
 		end_point 	= self.point_by_angle(self.az, max_dist, self.p)
 		# Endpoints of linepolygon
-		line 		= self.line_polygon(0.99, end_point)
+		line 		= self.line_polygon(0.75, end_point)
 		# Points found in database within linepolygon
-
 		points 		= self.dao_height.find_within_polygon(line)
-
 		for point in points:
 			# Don't use the point which is the same as the location
 			if self.p.x == point.x and self.p.y == point.y:
@@ -103,6 +100,7 @@ class Shadow():
 		points.append(self.point_by_angle(self.az + 90, spread, p))
 		points.append(self.point_by_angle(self.az + 90, spread, self.p))
 		return points
+
 
 
 	@property

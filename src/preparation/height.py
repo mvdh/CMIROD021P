@@ -3,7 +3,7 @@ from model import Point
 from pymongo import Connection, GEO2D
 import math
 
-class RDHeight():
+class RDHeightHandler():
     """ Class to deal with heights in Rijksdriehoekscoordinaten"""
 
     def __init__(self, zfile):

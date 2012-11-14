@@ -3,7 +3,7 @@ from dao import DaoSunPosition
 import datetime
 import math
 
-class SunPosition():
+class SunPositionHandler():
 
     def store_sun_positions(self, start_date, end_date):
         db = DaoSunPosition()

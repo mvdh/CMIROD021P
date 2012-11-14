@@ -1,4 +1,4 @@
-from model import Point
+from model import Point, SunPosition, Shadow
 from pymongo import Connection, GEO2D
 import math
 
@@ -104,9 +104,35 @@ class DaoSunPosition():
         self.bulk = []
 
     def find_within_time(self, start_date, end_date):
-        return self.col.find(
-            { '$and': [
+        result = []
+        for bson in self.col.find({ '$and': [
                 { 'datetime' : { '$gt': start_date }}, 
                 { 'datetime' : { '$lt': end_date }}
-            ]}
-        )
+            ]}):
+            sunpos = SunPosition(bson['az'], bson['el'], bson['datetime'])
+            result.append(sunpos)
+        return result
+
+class DaoShadow():
+
+    def __init__(self):
+        self.col = Connection()['rdam']['shadow']
+        self.bulk = []
+
+    def create_index(self):
+        self.col.create_index([('loc', GEO2D), ('date_time', 1)])
+
+    def persist(self, shadow):
+        bson = self.shadow_to_bson(shadow)
+        self.bulk.append(bson)
+        if(len(self.bulk) >= 10):            
+            self.flush()
+
+    def flush(self):
+        self.col.insert(self.bulk)
+        self.bulk = []     
+
+    def shadow_to_bson(self, shadow):
+        bson = {'loc': {'lat':shadow.lat, 'lon':shadow.lon}, 
+                'date_time': shadow.date_time}
+        return bson
