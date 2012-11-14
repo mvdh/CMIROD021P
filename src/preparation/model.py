@@ -1,9 +1,9 @@
 class Point():
     
     def __init__(self, x, y, z=None):
-    self._x = x
-    self._y = y
-    self._z = z
+        self._x = x
+        self._y = y
+        self._z = z
 
     @property
     def x(self):

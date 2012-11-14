@@ -1,3 +1,5 @@
+from dao import ColHeight
+from model import Point
 from pymongo import Connection, GEO2D
 import math
 
@@ -8,15 +10,8 @@ class RDHeight():
         self.zfile = zfile # File with x, y and z values
 
     def store_heights(self, box):
-        db      = 'rdam'
-        coll    = 'heights'
-
-        # Make connection with the database
-        db = Connection()[db]
-        db[coll].create_index([("loc", GEO2D)], min=0 , max=1000)
-        
-        # Use bulk insert to insert a lot of heights at once.
-        bulk = []
+        db = ColHeight(scale=3)
+        db.create_geo_index() 
 
         # Open file
         f = open(self.zfile)
@@ -26,24 +21,18 @@ class RDHeight():
         for i, line in enumerate(f):
             l = line.split(',')
 
-            # Py(mongo) can't handle large x and y values,
-            # so divide by 1000 to get smaller values.
-            x = math.floor(float(l[0]))/1000.0
-            y = math.floor(float(l[1]))/1000.0
+            x = math.floor(float(l[0]))
+            y = math.floor(float(l[1]))
             z = float(l[2].rstrip())
             
             # Only store the height if if it is within the
             # predifined box. 
-            if(self.is_within_box(x*1000, y*1000, box)):
-                bulk.append({'loc': { 'x': x, 'y': y }, 'z' : z })
-                if(len(bulk) >= 5000):
-                    # Store x, y, z in mongo
-                    db[coll].insert(bulk)
-                    bulk = []
+            if(self.is_within_box(x, y, box)):
+                point = Point(x, y, z)
+                db.persist(point)
 
         # Save heights that are not saved yet
-        if(len(bulk) > 0):
-            db[coll].insert(bulk)
+        db.flush()
 
         # Close file
         f.close()
